@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>YouTube Downloader</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/audio_website_file.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">∞MP3</div>
+        <div class="menu">
+            <a href="/">Home</a>
+            <a href="/contact">Contact</a>
+            <button id="darkToggle">Dark Mode 🌙</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>YouTube to MP3/MP4 Downloader</h2>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flash-messages">
+            {% for msg in messages %}
+                <li>{{ msg }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+        {% endwith %}
+
+        <form action="/download" method="POST">
+            <input type="text" name="youtube_url" placeholder="Paste YouTube URL..." value="{{ youtube_url or '' }}" required>
+            <div class="select-group">
+                <select name="format_type" required>
+                    <option value="mp3">MP3</option>
+                    <option value="mp4">MP4</option>
+                </select>
+                <select name="quality" id="qualitySelect" required>
+                    <option value="">Select Quality</option>
+                </select>
+
+            </div>
+            <button type="submit">Download</button>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/audio_website_file.js') }}"></script>
+</body>
+</html>
+
