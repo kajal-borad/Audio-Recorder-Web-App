@@ -62,17 +62,65 @@ document.querySelector("input[name='youtube_url']").addEventListener("input", fu
         .then(res => res.json())
         .then(data => {
             let select = document.getElementById("qualitySelect");
-            select.innerHTML = "";
 
-            if (!data.bitrates || data.bitrates.length === 0) {
-                select.innerHTML = "<option>No qualities found</option>";
-                return;
-            }
+            // default 128k
+            select.innerHTML = `<option value="128k" selected>default (128k)</option>`;
 
-            data.bitrates.forEach(b => {
+            if (!data.bitrates || data.bitrates.length === 0) return;
+
+            // Filter out 128 and 129
+            let filtered = data.bitrates.filter(b => b !== 128 && b !== 129);
+
+            filtered.forEach(b => {
                 select.innerHTML += `<option value="${b}k">${b}k</option>`;
             });
         });
-    }, 400); // 0.4 sec delay to prevent spam calls
+    }, 400);
 });
 
+document.querySelector("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    let form = this;
+    let formData = new FormData(form);
+
+    // Disable all inputs
+    document.querySelectorAll("input, select, button").forEach(el => {
+        el.disabled = true;
+        el.classList.add("blur-input");
+    });
+
+    // Show loader
+    document.getElementById("loader").style.display = "block";
+
+    fetch(form.action, {
+        method: form.method,
+        body: formData
+    })
+    .then(async res => {
+        let blob = await res.blob();
+
+        // Extract filename
+        let filename = "downloaded_file";
+        let disposition = res.headers.get("Content-Disposition");
+
+        if (disposition && disposition.includes("filename=")) {
+            filename = disposition.split("filename=")[1].replace(/"/g, "");
+        }
+
+        // Download file
+        let a = document.createElement("a");
+        let url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        // Hide loader & enable inputs
+        document.getElementById("loader").style.display = "none";
+        document.querySelectorAll("input, select, button").forEach(el => {
+            el.disabled = false;
+            el.classList.remove("blur-input");
+        });
+    });
+});
