@@ -1,27 +1,23 @@
-
 <!DOCTYPE html>
 <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>∞MP3 – YouTube Downloader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-    .loader {
-        width: 35px;
-        height: 35px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #3498db;
-        border-radius: 50%;
-        animation: spin 0.9s linear infinite;
-        margin: auto;
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:linear-gradient(135deg,#e0f2fe,#fef3c7);
+      color:#111827;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
     }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .blur-input {
-        opacity: 0.5;
-        pointer-events: none;
-    }
+    /* Navbar */
     .navbar {
+        width: 100%;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -30,35 +26,294 @@
         color: white;
     }
 
+    .navbar .logo {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
+
     .navbar a {
         color: white;
         margin-left: 20px;
         text-decoration: none;
         font-weight: bold;
+        font-size: 14px;
     }
 
     .navbar a:hover {
-        -decoration: underline;
+        text-decoration: underline;
+    }
+
+    .menu {
+        display: flex;
+        align-items: center;
     }
 
     .menu button {
         margin-left: 20px;
-        padding: 5px 10px;
+        padding: 8px 15px;
         cursor: pointer;
         border: none;
-        border-radius: 5px;
+        border-radius: 8px;
         background-color: #555;
         color: white;
+        font-weight: 500;
+        font-size: 13px;
     }
 
     .menu button:hover {
         background-color: #777;
     }
 
+    /* Main content */
+    .main{
+      flex:1;
+      width:100%;
+      max-width:960px;
+      padding:24px 20px 40px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:22px;
+      margin: 0 auto;
+    }
+
+    .hero{
+      text-align:center;
+      max-width:540px;
+    }
+
+    .hero h1{
+      font-size:30px;
+      margin-bottom:6px;
+    }
+
+    .hero p{
+      font-size:14px;
+      color:#4b5563;
+    }
+
+    .card{
+      width:100%;
+      max-width:560px;
+      padding:20px 18px 18px;
+      border-radius:18px;
+      background:#f9fafb;
+      border:1px solid rgba(148,163,184,.4);
+      box-shadow:0 14px 35px rgba(148,163,184,.4);
+    }
+
+    .card-header h2{
+      font-size:20px;
+      margin-bottom:2px;
+    }
+
+    .card-subtitle{
+      font-size:12px;
+      color:#6b7280;
+      margin-bottom:10px;
+    }
+
+    .label{
+      font-size:12px;
+      color:#4b5563;
+      margin-bottom:6px;
+      display:block;
+    }
+
+    input[type=text]{
+      width:100%;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:9px 10px;
+      font-size:13px;
+      margin-bottom:12px;
+    }
+
+    input[type=text]::placeholder{color:#9ca3af}
+
+    input[type=text]:focus{
+      outline:none;
+      border-color:#22c55e;
+      box-shadow:0 0 0 1px rgba(34,197,94,.5);
+      background:#ffffff;
+    }
+
+    .blur-input {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+
+    .field{
+      flex:1 1 150px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .label-small{
+      font-size:11px;
+      color:#6b7280;
+    }
+
+    select{
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:7px 9px;
+      font-size:13px;
+      background:#ffffff;
+    }
+
+    select:focus{
+      outline:none;
+      border-color:#22c55e;
+      box-shadow:0 0 0 1px rgba(34,197,94,.5);
+    }
+
+    .hint{
+      font-size:11px;
+      color:#6b7280;
+      margin-bottom: 4px;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      margin-top:4px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+
+    .primary,.secondary{
+      flex:1 1 140px;
+      border-radius:999px;
+      border:none;
+      padding:10px 12px;
+      font-size:14px;
+      font-weight:500;
+      cursor:pointer;
+    }
+
+    .primary{
+      background:#22c55e;
+      color:#f9fafb;
+    }
+
+    .primary:active{transform:translateY(1px);}
+
+    .secondary{
+      background:#e5e7eb;
+      color:#111827;
+    }
+
+    .secondary:active{transform:translateY(1px);}
+
+    .status-row{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:6px;
+    }
+
+    .status-dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:#22c55e;
+      box-shadow:0 0 0 4px rgba(34,197,94,.28);
+      flex-shrink:0;
+    }
+
+    .status{
+      font-size:11px;
+      color:#4b5563;
+    }
+
+    .loader{
+      display:none;
+      align-items:center;
+      gap:8px;
+      font-size:11px;
+      color:#4b5563;
+      margin-bottom:8px;
+    }
+
+    .loader.active{display:flex;}
+
+    .spinner{
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      border:2px solid rgba(148,163,184,.6);
+      border-top-color:#22c55e;
+      animation:spin .7s linear infinite;
+    }
+
+    @keyframes spin{
+      to{transform:rotate(360deg);}
+    }
+
+    .flash-messages {
+        background: #fef3c7;
+        border: 1px solid #fbbf24;
+        border-radius: 10px;
+        padding: 12px 15px;
+        margin-bottom: 15px;
+        list-style: none;
+        font-size: 12px;
+    }
+
+    .flash-messages li {
+        color: #92400e;
+    }
+
+    .footer{
+      width:100%;
+      max-width:960px;
+      padding:10px 20px 18px;
+      text-align:center;
+      font-size:11px;
+      color:#4b5563;
+      margin: 0 auto;
+    }
+
+    @media(max-width:600px){
+      .main{padding:18px 14px 32px;}
+      .card{padding:16px;}
+      .row{gap:8px;}
+      .actions{flex-direction:column;}
+      .navbar {
+        padding: 12px 15px;
+      }
+      .navbar .logo {
+        font-size: 18px;
+      }
+      .menu a {
+        margin-left: 12px;
+        font-size: 13px;
+      }
+      .menu button {
+        margin-left: 12px;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+    }
+
+    @media(max-width:400px){
+      .hero h1{font-size:22px;}
+      .card{padding:16px;}
+      button{padding:11px;font-size:14px;}
+      input,select{padding:11px;font-size:14px;}
+    }
     </style>
-<head>
-    <title>YouTube Downloader</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/audio_website_file.css') }}">
+
 </head>
 <body>
     <nav class="navbar">
@@ -70,40 +325,226 @@
         </div>
     </nav>
 
-    <div class="container">
-        <h2>YouTube to MP3/MP4 Downloader</h2>
+    <main class="main">
+        <section class="hero">
+            <h1>Friendly video converter</h1>
+            <p>Single-page, fast and simple. Paste a YouTube link, choose format &amp; quality, and download your file.</p>
+        </section>
 
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul class="flash-messages">
-            {% for msg in messages %}
-                <li>{{ msg }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-        {% endwith %}
-
-        <form action="/download" method="POST">
-            <input type="text" name="youtube_url" placeholder="Paste YouTube URL..." value="{{ youtube_url or '' }}" required>
-            <div class="select-group">
-                <select name="format_type" required>
-                    <option value="mp3">MP3</option>
-                    <option value="mp4">MP4</option>
-                </select>
-                <select name="quality" id="qualitySelect" required>
-                    <option value="128k" selected>default(128k)</option>
-                </select>
+        <section class="card" aria-label="YouTube downloader">
+            <div class="card-header">
+                <h2>Download from YouTube</h2>
+                <p class="card-subtitle">All controls and results in one clean page for the best user experience.</p>
             </div>
 
-            <div id="loader" class="loader" style="display:none;margin-top:10px;margin-bottom:10px;"></div>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flash-messages">
+                {% for msg in messages %}
+                    <li>{{ msg }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+            {% endwith %}
 
-            <button type="submit">Download</button>
-        </form>
+            <form action="/download" method="POST">
+                <label class="label" for="url">Video URL</label>
+                <input type="text" name="youtube_url" id="url" placeholder="https://youtube.com/watch?v=..." value="{{ youtube_url or '' }}" required autocomplete="off">
+
+                <div class="row">
+                    <div class="field">
+                        <span class="label-small">Format</span>
+                        <select name="format_type" id="format" required>
+                            <option value="mp3">MP3 (audio)</option>
+                            <option value="mp4">MP4 (video)</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <span class="label-small">Quality</span>
+                        <select name="quality" id="qualitySelect" required>
+                            <option value="128k" selected>default (128k)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="hint">
+                    Quality options will update based on the video you paste.
+                </p>
+
+                <div class="loader" id="loader">
+                    <div class="spinner"></div>
+                    <span>Converting...</span>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="primary" id="downloadBtn">Convert</button>
+                    <button type="button" class="secondary" id="resetBtn">Reset</button>
+                </div>
+
+                <div class="status-row">
+                    <div class="status-dot" id="statusDot"></div>
+                    <p id="status" class="status">Ready – paste a link to get started.</p>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <footer class="footer">
+        Soft pastel single-page converter · Front-end preview only – connect your own backend for real downloads.
+    </footer>
+
+<script>
+/* =========================
+   DARK MODE (with localStorage)
+========================= */
+const darkToggle = document.getElementById('darkToggle');
+const body = document.body;
+const card = document.querySelector('.card');
+
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        body.style.background = 'linear-gradient(135deg,#0f172a,#1e293b)';
+        body.style.color = '#f1f5f9';
+        card.style.background = '#1e293b';
+        card.style.color = '#f1f5f9';
+        darkToggle.textContent = 'Light Mode ☀️';
+    } else {
+        body.style.background = 'linear-gradient(135deg,#e0f2fe,#fef3c7)';
+        body.style.color = '#111827';
+        card.style.background = '#f9fafb';
+        card.style.color = '#111827';
+        darkToggle.textContent = 'Dark Mode 🌙';
+    }
+}
+
+// Page load pe saved theme apply
+const savedTheme = localStorage.getItem('theme') || 'light';
+applyTheme(savedTheme);
+
+// Toggle click
+darkToggle.addEventListener('click', () => {
+    const newTheme =
+        localStorage.getItem('theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
+});
 
 
-    </div>
+/* =========================
+   RESET BUTTON
+========================= */
+document.getElementById('resetBtn').addEventListener('click', () => {
+    document.getElementById('url').value = '';
+    document.getElementById('format').value = 'mp3';
+    document.getElementById('qualitySelect').innerHTML =
+        '<option value="128k" selected>default (128k)</option>';
+    document.getElementById('status').textContent =
+        'Ready – paste a link to get started.';
+    document.getElementById('loader').classList.remove('active');
+});
 
-    <script src="{{ url_for('static', filename='js/audio_website_file.js') }}"></script>
+
+/* =========================
+   DYNAMIC QUALITY FETCH
+========================= */
+let timer = null;
+document
+    .querySelector("input[name='youtube_url']")
+    .addEventListener("input", function () {
+
+    clearTimeout(timer);
+    const url = this.value;
+    if (!url) return;
+
+    timer = setTimeout(() => {
+        fetch("/get_info", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "youtube_url=" + encodeURIComponent(url)
+        })
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById("qualitySelect");
+            select.innerHTML =
+                '<option value="128k" selected>default (128k)</option>';
+
+            if (!data.bitrates) return;
+
+            data.bitrates
+                .filter(b => b !== 128 && b !== 129)
+                .forEach(b => {
+                    select.innerHTML +=
+                        `<option value="${b}k">${b}k</option>`;
+                });
+        })
+        .catch(err =>
+            console.error("Error fetching quality info:", err)
+        );
+    }, 400);
+});
+
+
+/* =========================
+   FORM SUBMIT + DOWNLOAD
+========================= */
+document.querySelector("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const form = this;
+    const formData = new FormData(form);
+
+    document.querySelectorAll("input, select, button").forEach(el => {
+        el.disabled = true;
+        el.classList.add("blur-input");
+    });
+
+    document.getElementById("loader").classList.add("active");
+    document.getElementById("status").textContent =
+        "Processing your request...";
+
+    fetch(form.action, {
+        method: form.method,
+        body: formData
+    })
+    .then(async res => {
+        const blob = await res.blob();
+        let filename = "downloaded_file";
+
+        const disposition = res.headers.get("Content-Disposition");
+        if (disposition && disposition.includes("filename=")) {
+            filename = disposition.split("filename=")[1].replace(/"/g, "");
+        }
+
+        const a = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        document.getElementById("loader").classList.remove("active");
+        document.getElementById("status").textContent =
+            "Download complete! Ready for next conversion.";
+
+        document.querySelectorAll("input, select, button").forEach(el => {
+            el.disabled = false;
+            el.classList.remove("blur-input");
+        });
+    })
+    .catch(err => {
+        console.error("Download error:", err);
+        document.getElementById("loader").classList.remove("active");
+        document.getElementById("status").textContent =
+            "Error occurred. Please try again.";
+
+        document.querySelectorAll("input, select, button").forEach(el => {
+            el.disabled = false;
+            el.classList.remove("blur-input");
+        });
+    });
+});
+</script>
+
+    
 </body>
 </html>
-

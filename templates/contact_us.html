@@ -2,142 +2,343 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Contact Us</title>
-    <link rel="stylesheet" href="/static/css/audio_website_file.css">
+    <title>Contact Us – ∞MP3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        /* Basic container styling */
-        .container {
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 30px;
-            background: #f9f9f9;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:linear-gradient(135deg,#e0f2fe,#fef3c7);
+      color:#111827;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
 
-        .container h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #333;
-        }
+    /* Navbar */
+    .navbar {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 30px;
+        background-color: #222;
+        color: white;
+    }
 
-        .container p {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #555;
-        }
+    .navbar .logo {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+    }
 
-        /* Form styling */
-        form div {
-            margin-bottom: 15px;
-        }
+    .navbar a {
+        color: white;
+        margin-left: 20px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 14px;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: bold;
-        }
+    .navbar a:hover {
+        text-decoration: underline;
+    }
 
-        input[type="text"], input[type="email"], textarea {
-            width: 100%;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
+    .menu {
+        display: flex;
+        align-items: center;
+    }
 
-        textarea {
-            resize: vertical;
-        }
+    .menu button {
+        margin-left: 20px;
+        padding: 8px 15px;
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        background-color: #555;
+        color: white;
+        font-weight: 500;
+        font-size: 13px;
+    }
 
-        button[type="submit"] {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-        }
+    .menu button:hover {
+        background-color: #777;
+    }
 
-        button[type="submit"]:hover {
-            background-color: #45a049;
-        }
+    /* Main content */
+    .main{
+      flex:1;
+      width:100%;
+      max-width:960px;
+      padding:24px 20px 40px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:22px;
+      margin: 0 auto;
+    }
 
-        /* Navbar */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 30px;
-            background-color: #222;
-            color: white;
-        }
+    .hero{
+      text-align:center;
+      max-width:540px;
+    }
 
-        .navbar a {
-            color: white;
-            margin-left: 20px;
-            text-decoration: none;
-            font-weight: bold;
-        }
+    .hero h1{
+      font-size:30px;
+      margin-bottom:6px;
+    }
 
-        .navbar a:hover {
-            text-decoration: underline;
-        }
+    .hero p{
+      font-size:14px;
+      color:#4b5563;
+    }
 
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
+    .card{
+      width:100%;
+      max-width:560px;
+      padding:20px 18px 18px;
+      border-radius:18px;
+      background:#f9fafb;
+      border:1px solid rgba(148,163,184,.4);
+      box-shadow:0 14px 35px rgba(148,163,184,.4);
+    }
 
-        .menu button {
-            margin-left: 20px;
-            padding: 5px 10px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background-color: #555;
-            color: white;
-        }
+    .card-header h2{
+      font-size:20px;
+      margin-bottom:2px;
+    }
 
-        .menu button:hover {
-            background-color: #777;
-        }
+    .card-subtitle{
+      font-size:12px;
+      color:#6b7280;
+      margin-bottom:15px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .label{
+      font-size:12px;
+      color:#4b5563;
+      margin-bottom:6px;
+      display:block;
+      font-weight: 500;
+    }
+
+    input[type=text], input[type=email], textarea{
+      width:100%;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:9px 10px;
+      font-size:13px;
+      font-family:inherit;
+    }
+
+    input[type=text]::placeholder, 
+    input[type=email]::placeholder,
+    textarea::placeholder{
+      color:#9ca3af;
+    }
+
+    input[type=text]:focus, 
+    input[type=email]:focus,
+    textarea:focus{
+      outline:none;
+      border-color:#22c55e;
+      box-shadow:0 0 0 1px rgba(34,197,94,.5);
+      background:#ffffff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      margin-top:20px;
+      flex-wrap:wrap;
+    }
+
+    .primary{
+      flex:1;
+      border-radius:999px;
+      border:none;
+      padding:10px 12px;
+      font-size:14px;
+      font-weight:500;
+      cursor:pointer;
+      background:#22c55e;
+      color:#f9fafb;
+    }
+
+    .primary:active{transform:translateY(1px);}
+
+    .contact-info {
+      text-align: center;
+      margin: 15px 0;
+      padding: 12px;
+      background: rgba(34,197,94,.1);
+      border-radius: 10px;
+      font-size: 13px;
+      color: #4b5563;
+    }
+
+    .contact-info strong {
+      color: #111827;
+    }
+
+    .footer{
+      width:100%;
+      max-width:960px;
+      padding:10px 20px 18px;
+      text-align:center;
+      font-size:11px;
+      color:#4b5563;
+      margin: 0 auto;
+    }
+
+    @media(max-width:600px){
+      .main{padding:18px 14px 32px;}
+      .card{padding:16px;}
+      .navbar {
+        padding: 12px 15px;
+      }
+      .navbar .logo {
+        font-size: 18px;
+      }
+      .menu a {
+        margin-left: 12px;
+        font-size: 13px;
+      }
+      .menu button {
+        margin-left: 12px;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+    }
+
+    @media(max-width:400px){
+      .hero h1{font-size:22px;}
+      .card{padding:16px;}
+      button{padding:11px;font-size:14px;}
+      input,textarea{padding:11px;font-size:14px;}
+    }
     </style>
 </head>
 <body>
-<nav class="navbar">
-    <div class="logo">∞MP3</div>
-    <div class="menu">
-        <a href="/">Home</a>
-        <a href="/contact">Contact</a>
-        <button id="darkToggle">Dark Mode 🌙</button>
-    </div>
-</nav>
+    <nav class="navbar">
+        <div class="logo">∞MP3</div>
+        <div class="menu">
+            <a href="/">Home</a>
+            <a href="/contact">Contact</a>
+            <button id="darkToggle">Dark Mode 🌙</button>
+        </div>
+    </nav>
 
-<div class="container">
-    <h2>Contact Us</h2>
-    <p>Email: support@example.com</p>
-    <form action="/contact_submit" method="POST">
-        <div>
-            <label for="name">Name</label>
-            <input type="text" name="name" id="name" placeholder="Your Name" required>
-        </div>
-        <div>
-            <label for="email">Email</label>
-            <input type="email" name="email" id="email" placeholder="Your Email" required>
-        </div>
-        <div>
-            <label for="message">Message</label>
-            <textarea name="message" id="message" placeholder="Write your message..." rows="5" required></textarea>
-        </div>
-        <button type="submit">Submit</button>
-    </form>
-</div>
+    <main class="main">
+        <section class="hero">
+            <h1>Contact Us</h1>
+            <p>Have questions or feedback? We'd love to hear from you. Send us a message!</p>
+        </section>
 
-<script src="/static/js/audio_website_file.js"></script>
+        <section class="card" aria-label="Contact form">
+            <div class="card-header">
+                <h2>Get in Touch</h2>
+                <p class="card-subtitle">Fill out the form below and we'll get back to you as soon as possible.</p>
+            </div>
+
+            <div class="contact-info">
+                <strong>Email:</strong> support@example.com
+            </div>
+
+            <form action="/contact_submit" method="POST">
+                <div class="form-group">
+                    <label class="label" for="name">Name</label>
+                    <input type="text" name="name" id="name" placeholder="Your name" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="label" for="email">Email</label>
+                    <input type="email" name="email" id="email" placeholder="your.email@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="label" for="description">Message</label>
+                    <textarea name="description" id="description" placeholder="Write your message here..." required></textarea>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="primary">Send Message</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <footer class="footer">
+        Soft pastel single-page converter · We respond to all inquiries within 24 hours
+    </footer>
+
+
+
+    <script>
+/* =========================
+   DARK MODE (Contact Page)
+   with localStorage
+========================= */
+const darkToggle = document.getElementById('darkToggle');
+const body = document.body;
+const card = document.querySelector('.card');
+
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        body.style.background = 'linear-gradient(135deg,#0f172a,#1e293b)';
+        body.style.color = '#f1f5f9';
+
+        card.style.background = '#1e293b';
+        card.style.color = '#f1f5f9';
+
+        darkToggle.textContent = 'Light Mode ☀️';
+    } else {
+        body.style.background = 'linear-gradient(135deg,#e0f2fe,#fef3c7)';
+        body.style.color = '#111827';
+
+        card.style.background = '#f9fafb';
+        card.style.color = '#111827';
+
+        darkToggle.textContent = 'Dark Mode 🌙';
+    }
+}
+
+// Page load pe saved theme apply
+const savedTheme = localStorage.getItem('theme') || 'light';
+applyTheme(savedTheme);
+
+// Toggle click
+darkToggle.addEventListener('click', () => {
+    const newTheme =
+        localStorage.getItem('theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
+});
+
+
+/* =========================
+   FORM SUBMIT FEEDBACK
+========================= */
+document.querySelector('form').addEventListener('submit', () => {
+    const submitBtn = document.querySelector('.primary');
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled = true;
+
+    setTimeout(() => {
+        submitBtn.textContent = 'Send Message';
+        submitBtn.disabled = false;
+    }, 2000);
+});
+</script>
+
 </body>
 </html>
