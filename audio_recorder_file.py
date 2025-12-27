@@ -160,14 +160,9 @@ def download():
             with open(progress_file, "w") as f:
                 f.write("100|Converting")
 
-    # MODERN USER AGENT (Chrome 120 on Windows)
-    user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-
+    # Let yt-dlp handle User-Agent dynamically to reduce bot flags
+    # We also specify a cache directory to avoid stale temp files
     common_opts = {
-        'http_headers': {
-            'User-Agent': user_agent,
-            'Accept-Language': 'en-US,en;q=0.9',
-        },
         'nocheckcertificate': True,
         'ignoreerrors': True,
         'no_warnings': True,
@@ -175,6 +170,7 @@ def download():
         'verbose': True,    
         'retries': 10,      
         'fragment_retries': 10,
+        'cache_dir': '/tmp/yt_dlp_cache',
     }
     
     if os.path.exists(COOKIES_FILE):
@@ -188,7 +184,10 @@ def download():
         opts_info = {"quiet": True}
         opts_info.update(common_opts)
         
-        info = YoutubeDL(opts_info).extract_info(url, download=False)
+        # Clear cache before extraction to fix 'No JS' warnings
+        with YoutubeDL(opts_info) as ydl:
+            ydl.cache.remove()
+            info = ydl.extract_info(url, download=False)
         
         # ERROR FIX: Check if info is None before accessing
         if not info:
