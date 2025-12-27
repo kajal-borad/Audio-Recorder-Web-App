@@ -28,9 +28,8 @@ def send_async_email(name, email, description, lead_id):
         msg['To'] = "kajalborad.devintelle@gmail.com"
         msg['Reply-To'] = email
 
-        # Set a short timeout so the thread doesn't hang forever
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-            server.starttls()
+        # DigitalOcean/Cloud block port 587 often. Use Port 465 (SSL)
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
             server.login("kajalborad45@gmail.com", "hekritbogafxrdte")
             server.send_message(msg)
             # Use local print or rely on global logger (which is defined later)
