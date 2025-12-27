@@ -3,38 +3,49 @@ import uuid
 from yt_dlp import YoutubeDL
 import time
 from apscheduler.schedulers.background import BackgroundScheduler   
-import os, re, glob, sys, shutil
+import os, re, glob, sys, shutil, subprocess
 import requests
 import psycopg2
 import smtplib
 from email.mime.text import MIMEText
 import logging
 
+# Configure Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
+
 # -----------------------------
-# AUTO-FIX: JavaScript Runtime
+# AGGRESSIVE FIX: JavaScript Runtime
 # -----------------------------
-# yt-dlp needs 'node' specifically. If only 'nodejs' exists (common on Ubuntu),
-# we locate it and create a temporary PATH entry so yt-dlp finds it.
+# yt-dlp REQUIRES 'node' in the path. On Debian/Ubuntu, it is often 'nodejs'.
+# Since this script runs as root, we will creates a global symlink if missing.
 try:
-    if not shutil.which("node") and shutil.which("nodejs"):
-        print("[INFO] 'node' command not found, but 'nodejs' exists. Patching PATH...")
-        nodejs_path = shutil.which("nodejs")
-        # Create a local bin folder to bridge the gap
-        local_bin = os.path.join(os.path.dirname(__file__), "local_bin_fix")
-        if not os.path.exists(local_bin):
-            os.makedirs(local_bin)
-        
-        # Create symlink: local_bin/node -> /usr/bin/nodejs
-        symlink_path = os.path.join(local_bin, "node")
-        if not os.path.exists(symlink_path):
-            os.symlink(nodejs_path, symlink_path)
-            
-        # Prepend to PATH for this process
-        os.environ["PATH"] = local_bin + os.pathsep + os.environ["PATH"]
-        print(f"[SUCCESS] Patched PATH with: {local_bin}")
-        print(f"[CHECK] node version: {os.popen('node -v').read().strip()}")
+    node_path = shutil.which("node")
+    nodejs_path = shutil.which("nodejs")
+    
+    # If 'node' is missing but 'nodejs' is found, FORCE LINK IT
+    if not node_path and nodejs_path:
+        logger.info(f"'node' command not found, but '{nodejs_path}' exists. Creating global symlink...")
+        try:
+            # Force create symlink /usr/bin/node -> /usr/bin/nodejs
+            subprocess.run(["ln", "-sf", nodejs_path, "/usr/bin/node"], check=True)
+            logger.info("[SUCCESS] Created /usr/bin/node symlink.")
+        except Exception as e:
+            logger.error(f"Failed to create symlink: {e}")
+
+    # Double check status for logs
+    check_node = shutil.which("node")
+    if check_node:
+        try:
+            version = subprocess.getoutput("node -v")
+            logger.info(f"Node.js is active: {check_node} ({version})")
+        except:
+            logger.info(f"Node.js found at {check_node}, but version check failed.")
+    else:
+        logger.warning("CRITICAL: Node.js is NOT found. YouTube downloads will fail.")
+
 except Exception as e:
-    print(f"[WARNING] Failed to auto-patch Node.js: {e}")
+    logger.error(f"Node.js fix error: {e}")
 
 
 app = Flask(
@@ -44,9 +55,6 @@ app = Flask(
 )
 app.secret_key = "abc123"
 
-# Configure Logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 # Download folder
@@ -105,14 +113,29 @@ progress_data = {"percent": 0}
 
 @app.route("/progress")
 def progress():
-    return {"percent": progress_data.get("percent", 0)}
+    req_id = request.args.get("req_id")
+    if not req_id:
+        return {"percent": 0, "status": "waiting"}
+    
+    progress_file = os.path.join(DOWNLOAD_FOLDER, f"{req_id}.progress")
+    if os.path.exists(progress_file):
+        try:
+            with open(progress_file, "r") as f:
+                data = f.read().strip().split("|")
+                if len(data) >= 2:
+                    return {"percent": int(data[0]), "status": data[1]}
+                return {"percent": int(data[0]), "status": "processing"}
+        except:
+            pass
+    return {"percent": 0, "status": "starting"} or {"percent": 0}
 
 
 @app.route("/download", methods=["POST"])
 def download():
     url = request.form.get("youtube_url")
     format_type = request.form.get("format_type")
-
+    req_id = request.form.get("req_id", str(uuid.uuid4()))
+    
     quality = request.form.get("quality", "128k").replace("k", "")
     
 
@@ -120,8 +143,24 @@ def download():
         flash("Please enter a YouTube URL.")
         return redirect("/")
 
+    # Progress Hook function (File-based for Gunicorn compatibility)
+    def progress_hook(d):
+        progress_file = os.path.join(DOWNLOAD_FOLDER, f"{req_id}.progress")
+        if d['status'] == 'downloading':
+            try:
+                total = d.get('total_bytes') or d.get('total_bytes_estimate')
+                downloaded = d.get('downloaded_bytes', 0)
+                if total:
+                    percent = int(downloaded / total * 100)
+                    with open(progress_file, "w") as f:
+                        f.write(f"{percent}|Downloading")
+            except:
+                pass
+        elif d['status'] == 'finished':
+            with open(progress_file, "w") as f:
+                f.write("100|Converting")
+
     # MODERN USER AGENT (Chrome 120 on Windows)
-    # This helps reduce bot detection significantly compared to the old Chrome 91 string
     user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
     common_opts = {
@@ -132,9 +171,9 @@ def download():
         'nocheckcertificate': True,
         'ignoreerrors': True,
         'no_warnings': True,
-        'quiet': False,     # We want to see errors in logs
-        'verbose': True,    # Helps debug specific YouTube blocks
-        'retries': 10,      # Retry on 502/timeouts
+        'quiet': False,     
+        'verbose': True,    
+        'retries': 10,      
         'fragment_retries': 10,
     }
     
@@ -149,15 +188,20 @@ def download():
         opts_info = {"quiet": True}
         opts_info.update(common_opts)
         
-        # 'extract_info' with download=False is lighter, but still checks validity
         info = YoutubeDL(opts_info).extract_info(url, download=False)
+        
+        # ERROR FIX: Check if info is None before accessing
+        if not info:
+             raise Exception("YoutubeDL returned no info (None).")
+
         video_title = info.get("title", "Unknown_Title")
-        clean_title = re.sub(r'[^a-zA-Z0-9_\- ]', '', video_title).replace(" ", "_")
-        thumbnail_url = info.get("thumbnail") 
+        clean_title = re.sub(r'[^a-zA-Z0-9_\- ]', '', video_title).replace(" ", "_") 
+        # Clean title further to prevent path issues
+        clean_title = sanitize_filename(clean_title)
 
     except Exception as e:
         logger.error(f"Extract info failed: {e}")
-        flash("Invalid YouTube URL or server blocked. Check server logs.")
+        flash("Server blocked by YouTube. Try updating cookies.txt.")
         return redirect("/")
 
     filename = f"{clean_title}.{format_type.lower()}"
@@ -165,6 +209,7 @@ def download():
     
     ydl_opts = {
         'outtmpl': output_template,
+        'progress_hooks': [progress_hook],
     }
     ydl_opts.update(common_opts)
 
@@ -202,7 +247,7 @@ def download():
         logger.info("Download finished successfully.")
     except Exception as e:
         logger.error(f"Download failed: {e}")
-        # Even if it errors, check if file exists (sometimes ignoreerrors saves it)
+        # Even if it errors, we check if file exists (ignoreerrors=True might have saved it)
         pass 
 
     final_file = os.path.join(DOWNLOAD_FOLDER, filename)    
@@ -217,10 +262,15 @@ def download():
         final_file = None
 
     if final_file and os.path.exists(final_file):
+        # Clean up progress file
+        progress_file = os.path.join(DOWNLOAD_FOLDER, f"{req_id}.progress")
+        if os.path.exists(progress_file):
+            os.remove(progress_file)
+            
         return send_file(final_file, as_attachment=True, download_name=f"{clean_title}.{format_type.lower()}")
     else:
         logger.error("Final file not found after download attempt.")
-        flash("Server blocked by YouTube. Please update cookies.txt using 'Get cookies.txt LOCALLY' extension.")
+        flash("Download failed. YouTube blocked the server request.")
         return redirect("/")
     
 
@@ -272,7 +322,7 @@ def contact_submit():
             server.send_message(msg)
 
     except Exception as e:
-        print("Email sending failed:", e)
+        logger.error(f"Email sending failed: {e}")
 
     return render_template("thankyou_template.html")
 
@@ -293,6 +343,10 @@ def get_info():
              ydl_opts_info['cookies'] = COOKIES_FILE
              
         info = YoutubeDL(ydl_opts_info).extract_info(url, download=False)
+        
+        # ERROR FIX: Check None
+        if not info:
+            return {"bitrates": []}
 
         audio_formats = [
             f for f in info.get("formats", [])
@@ -314,12 +368,12 @@ def get_info():
                     bitrates.add(est)
 
         bitrates = sorted(bitrates)
-        print("Extracted bitrates:", bitrates)
+        logger.info(f"Extracted bitrates: {bitrates}")
 
         return {"bitrates": bitrates}
 
     except Exception as e:
-        print("ERROR:", e)
+        logger.error(f"get_info ERROR: {e}")
         return {"bitrates": []}
 
 
