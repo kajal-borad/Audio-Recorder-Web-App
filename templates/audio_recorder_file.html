@@ -1,463 +1,459 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>∞MP3 – YouTube Downloader</title>
+    <title>MediaX – Friendly Video Converter</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-    :root {
-        --primary: #ef4444; /* Red-ish from reference */
-        --primary-hover: #dc2626;
-        --bg-gradient: linear-gradient(135deg, #f0fdf4, #fff7ed);
-        --text-main: #1f2937;
-        --text-muted: #6b7280;
-        --card-bg: #ffffff;
-        --card-border: #e5e7eb;
-    }
-
-    * {box-sizing: border-box; margin: 0; padding: 0;}
-    
-    body {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        background: var(--bg-gradient);
-        color: var(--text-main);
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        line-height: 1.5;
-    }
-
-    /* Navbar */
-    .navbar {
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 5%;
-        background-color: #fff;
-        border-bottom: 1px solid #e5e7eb;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    .navbar .logo {
-        font-size: 22px;
-        font-weight: 800;
-        background: linear-gradient(to right, #ef4444, #f59e0b);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: -0.5px;
-    }
-
-    .menu {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-    }
-
-    .menu a {
-        color: var(--text-main);
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 14px;
-        transition: color 0.2s;
-    }
-
-    .menu a:hover {
-        color: var(--primary);
-    }
-
-    .menu button {
-        padding: 8px 16px;
-        cursor: pointer;
-        border: 1px solid #e5e7eb;
-        border-radius: 99px;
-        background-color: transparent;
-        color: var(--text-main);
-        font-weight: 600;
-        font-size: 13px;
-        transition: all 0.2s;
-    }
-
-    .menu button:hover {
-        background-color: #f9fafb;
-        border-color: #d1d5db;
-    }
-
-    /* Main content */
-    .main {
-        flex: 1;
-        width: 100%;
-        max-width: 800px;
-        padding: 40px 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 30px;
-        margin: 0 auto;
-    }
-
-    .hero {
-        text-align: center;
-        max-width: 600px;
-        margin-bottom: 10px;
-    }
-
-    .hero h1 {
-        font-size: 36px;
-        font-weight: 800;
-        margin-bottom: 12px;
-        letter-spacing: -1px;
-        color: #111827;
-    }
-
-    .hero p {
-        font-size: 16px;
-        color: var(--text-muted);
-        line-height: 1.6;
-    }
-
-    .card {
-        width: 100%;
-        padding: 32px;
-        border-radius: 24px;
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15);
-    }
-
-    .card-header {
-        text-align: center;
-        margin-bottom: 24px;
-    }
-
-    .card-header h2 {
-        font-size: 22px;
-        font-weight: 700;
-        margin-bottom: 6px;
-    }
-
-    .card-subtitle {
-        font-size: 14px;
-        color: var(--text-muted);
-    }
-
-    .label {
-        font-size: 13px;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 8px;
-        display: block;
-    }
-
-    .input-group {
-        position: relative;
-        margin-bottom: 20px;
-    }
-
-    input[type=text], select {
-        width: 100%;
-        border-radius: 12px;
-        border: 2px solid #e5e7eb;
-        padding: 12px 16px;
-        font-size: 15px;
-        transition: all 0.2s;
-        background: #f9fafb;
-        color: #1f2937;
-        appearance: none; /* Remove default arrow for cleaner look */
-    }
-
-    input[type=text]:focus, select:focus {
-        outline: none;
-        border-color: var(--primary);
-        background: #ffffff;
-        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
-    }
-
-    /* Custom Select Arrow Wrapper */
-    .field {
-        position: relative;
-        flex: 1;
-    }
-    
-    .field::after {
-        content: '▼';
-        font-size: 10px;
-        color: #6b7280;
-        position: absolute;
-        right: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-    }
-
-    .blur-input {
-        opacity: 0.6;
-        pointer-events: none;
-        filter: grayscale(1);
-    }
-
-    .row {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .label-small {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-muted);
-        margin-bottom: 6px;
-        display: block;
-    }
-
-    .hint {
-        font-size: 12px;
-        color: var(--text-muted);
-        text-align: center;
-        margin-bottom: 16px;
-        background: #f3f4f6;
-        padding: 8px;
-        border-radius: 8px;
-    }
-
-    .actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 8px;
-        margin-bottom: 20px;
-    }
-
-    button.primary, button.secondary {
-        flex: 1;
-        border-radius: 12px;
-        border: none;
-        padding: 14px 20px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: transform 0.1s, box-shadow 0.2s, background-color 0.2s;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    button.primary {
-        background: var(--primary);
-        color: white;
-        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
-    }
-
-    button.primary:hover {
-        background: var(--primary-hover);
-        box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.4);
-    }
-
-    button.primary:active {
-        transform: scale(0.98);
-    }
-
-    button.secondary {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-    button.secondary:hover {
-        background: #e5e7eb;
-    }
-
-    button.secondary:active {
-        transform: scale(0.98);
-    }
-
-    /* Status & Loader */
-    .status-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-top: 10px;
-        padding: 12px;
-        border-radius: 12px;
-        background: #f8fafc;
-    }
-
-    .status-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #22c55e;
-        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
-    }
-
-    .status {
-        font-size: 13px;
-        font-weight: 500;
-        color: #4b5563;
-    }
-
-    .loader {
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 20px;
-        padding: 20px;
-        background: #f0fdf4;
-        border-radius: 12px;
-        border: 1px dashed #86efac;
-    }
-
-    .loader.active { display: flex; }
-
-    .spinner {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        border: 3px solid #dcfce7;
-        border-top-color: #22c55e;
-        animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .flash-messages {
-        background: #fffbeb;
-        border: 1px solid #fcd34d;
-        border-radius: 12px;
-        padding: 12px 16px;
-        margin-bottom: 20px;
-        list-style: none;
-    }
-
-    .flash-messages li {
-        color: #92400e;
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-    .footer {
-        width: 100%;
-        text-align: center;
-        padding: 20px;
-        font-size: 13px;
-        color: var(--text-muted);
-        margin-top: auto;
-        border-top: 1px solid #e5e7eb;
-    }
-
-    /* 
-       RESPONSIVE DESIGN IMPROVEMENTS 
-       ------------------------------
-    */
-
-    /* Tablet and Small Laptops */
-    @media (max-width: 768px) {
-        .main {
-            padding: 30px 15px;
+        /* --- CSS FROM MediaX_denny/style.css --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
         }
-        .hero h1 {
-            font-size: 30px;
-        }
-    }
 
-    /* Mobile Phones */
-    @media (max-width: 600px) {
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #e0f2fe, #fef3c7);
+            color: #111827;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Navbar (Black header) */
         .navbar {
-            padding: 12px 15px;
-        }
-        .main {
-            padding: 20px 12px;
-        }
-        .card {
-            padding: 20px;
-        }
-
-        /* Fix "messy layout": Stack inputs on mobile for cleanliness */
-        .row {
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        /* Fix "buttons too large": Stack them but keep height reasonable */
-        .actions {
-            flex-direction: column;
-        }
-
-        button.primary, button.secondary {
             width: 100%;
-            padding: 12px; /* Slightly smaller vertical padding */
-            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: #222;
+            color: white;
         }
 
-        .hero h1 {
-            font-size: 26px;
-            line-height: 1.2;
+        .navbar .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
         }
-        
-        .hero p {
+
+        .navbar a {
+            color: white;
+            margin-left: 20px;
+            text-decoration: none;
+            font-weight: bold;
             font-size: 14px;
         }
-        
-        .menu { gap: 10px; }
-        .menu a { display: none; } /* Hide 'Home'/'Contact' text links on mobile to save space, keep only button */
-        .menu button { display: block; padding: 6px 12px; font-size: 12px; }
-    }
-    </style>
 
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+
+        .main {
+            flex: 1;
+            width: 100%;
+            max-width: 960px;
+            padding: 24px 20px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .hero {
+            text-align: center;
+            max-width: 540px;
+        }
+
+        .hero h1 {
+            font-size: 30px;
+            margin-bottom: 6px;
+        }
+
+        .hero p {
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 560px;
+            padding: 20px 18px 18px;
+            border-radius: 18px;
+            background: #f9fafb;
+            border: 1px solid rgba(148, 163, 184, .4);
+            box-shadow: 0 14px 35px rgba(148, 163, 184, .4);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .card-header h2 {
+            font-size: 20px;
+            margin-bottom: 2px;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+
+        .label {
+            font-size: 12px;
+            color: #4b5563;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        input[type=url],
+        input[type=text] {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            padding: 9px 10px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            background: #fff;
+            color: inherit;
+        }
+
+        input::placeholder {
+            color: #9ca3af
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 1px rgba(34, 197, 94, .5);
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .field {
+            flex: 1 1 150px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .label-small {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        select {
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            padding: 7px 9px;
+            font-size: 13px;
+            background: #ffffff;
+            color: inherit;
+            width: 100%;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 1px rgba(34, 197, 94, .5);
+        }
+
+        .hint {
+            font-size: 11px;
+            color: #6b7280;
+            flex: 1 1 200px;
+            margin-bottom: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .primary,
+        .secondary {
+            flex: 1 1 140px;
+            border-radius: 999px;
+            border: none;
+            padding: 10px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .primary {
+            background: #22c55e;
+            color: #f9fafb;
+        }
+
+        .primary:active {
+            transform: translateY(1px);
+        }
+
+        .secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .secondary:active {
+            transform: translateY(1px);
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, .28);
+            flex-shrink: 0;
+        }
+
+        .status {
+            font-size: 11px;
+            color: #4b5563;
+        }
+
+        .loader {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+
+        .loader.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            border: 2px solid rgba(148, 163, 184, .6);
+            border-top-color: #22c55e;
+            animation: spin .7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .footer {
+            width: 100%;
+            max-width: 960px;
+            padding: 10px 20px 18px;
+            text-align: center;
+            font-size: 11px;
+            color: #4b5563;
+        }
+
+        /* Responsive adaptations */
+        @media(max-width:600px) {
+            .navbar {
+                padding: 12px 15px;
+            }
+
+            .navbar .logo {
+                font-size: 18px;
+            }
+
+            .menu a {
+                margin-left: 12px;
+                font-size: 13px;
+            }
+
+            .menu button {
+                margin-left: 12px;
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .main {
+                padding: 18px 14px 32px;
+            }
+
+            .card {
+                padding: 16px;
+                margin-top: 10px;
+            }
+
+            .row {
+                gap: 8px;
+            }
+
+            .actions {
+                gap: 8px;
+                margin-top: 14px;
+                flex-direction: column;
+            }
+
+            input,
+            select {
+                font-size: 15px;
+                padding: 12px;
+            }
+
+            button {
+                padding: 12px;
+                font-size: 15px;
+                border-radius: 10px;
+            }
+        }
+
+        .menu {
+            display: flex;
+            align-items: center;
+        }
+
+        .menu button {
+            margin-left: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #555;
+            color: white;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .menu button:hover {
+            background-color: #777;
+        }
+
+
+        /* --- DARK MODE --- */
+        body.dark {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #f3f4f6;
+        }
+
+        body.dark .logo {
+            color: #f3f4f6;
+        }
+
+        body.dark .card {
+            background: #1e293b;
+            border-color: #374151;
+            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        body.dark .card-subtitle,
+        body.dark .label,
+        body.dark .hero p,
+        body.dark .status,
+        body.dark .label-small,
+        body.dark .hint,
+        body.dark .footer,
+        body.dark .loader {
+            color: #9ca3af;
+        }
+
+        body.dark input[type=url],
+        body.dark input[type=text],
+        body.dark select {
+            background: #334155;
+            border-color: #475569;
+            color: #f3f4f6;
+        }
+
+        body.dark input::placeholder {
+            color: #64748b;
+        }
+
+        body.dark .secondary {
+            background: #334155;
+            color: #f3f4f6;
+        }
+
+        body.dark .secondary:hover {
+            background: #475569;
+        }
+
+
+        body.dark .flash-messages {
+            background: #451a03;
+            border-color: #92400e;
+        }
+
+        body.dark .flash-messages li {
+            color: #fcd34d;
+        }
+    </style>
 </head>
+
 <body>
     <nav class="navbar">
         <div class="logo">∞MP3</div>
         <div class="menu">
             <a href="/">Home</a>
-            <a href="/contact">Contact</a>
+            <a href="/contact">Contact Us</a>
             <button id="darkToggle">Dark Mode 🌙</button>
         </div>
     </nav>
 
+
     <main class="main">
         <section class="hero">
             <h1>Friendly video converter</h1>
-            <p>Single-page, fast and simple. Paste a YouTube link, choose format &amp; quality, and download your file.</p>
+            <p>Single-page, fast and simple. Paste a URL, choose format &amp; quality.</p>
         </section>
 
-        <section class="card" aria-label="YouTube downloader">
+        <section class="card" aria-label="Video converter">
             <div class="card-header">
-                <h2>Download from YouTube</h2>
-                <p class="card-subtitle">All controls and results in one clean page for the best user experience.</p>
+                <h2>Convert a video link</h2>
+                <p class="card-subtitle">All controls and results in one clean page.</p>
             </div>
 
             {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <ul class="flash-messages">
-                {% for msg in messages %}
+            <div class="row">
+                <ul class="flash-messages"
+                    style="width:100%; list-style:none; background:#fffbeb; color:#92400e; padding:10px; border-radius:8px; margin-bottom:12px; font-size:13px; border:1px solid #fcd34d;">
+                    {% for msg in messages %}
                     <li>{{ msg }}</li>
-                {% endfor %}
+                    {% endfor %}
                 </ul>
+            </div>
             {% endif %}
             {% endwith %}
 
             <form action="/download" method="POST">
                 <label class="label" for="url">Video URL</label>
-                <input type="text" name="youtube_url" id="url" placeholder="https://youtube.com/watch?v=..." value="{{ youtube_url or '' }}" required autocomplete="off">
+                <input id="url" name="youtube_url" type="text" placeholder="https://example.com/watch?v=..."
+                    autocomplete="off" value="{{ youtube_url or '' }}" required />
 
                 <div class="row">
                     <div class="field">
                         <span class="label-small">Format</span>
-                        <select name="format_type" id="format" required>
+                        <select id="format" name="format_type">
                             <option value="mp3">MP3 (audio)</option>
                             <option value="mp4">MP4 (video)</option>
                         </select>
                     </div>
                     <div class="field">
                         <span class="label-small">Quality</span>
-                        <select name="quality" id="qualitySelect" required>
+                        <select id="qualitySelect" name="quality">
                             <option value="128k" selected>default (128k)</option>
                         </select>
                     </div>
@@ -467,14 +463,13 @@
                     Quality options will update based on the video you paste.
                 </p>
 
-                <div class="loader" id="loader">
-                    <div class="spinner"></div>
-                    <span>Converting...</span>
+                <div id="loader" class="loader">
+                    <div class="spinner"></div>Processing...
                 </div>
 
                 <div class="actions">
-                    <button type="submit" class="primary" id="downloadBtn">Convert</button>
-                    <button type="button" class="secondary" id="resetBtn">Reset</button>
+                    <button type="submit" id="convertBtn" class="primary">Convert</button>
+                    <button id="resetBtn" class="secondary" type="button">Reset</button>
                 </div>
 
                 <div class="status-row">
@@ -486,178 +481,125 @@
     </main>
 
     <footer class="footer">
-        Soft pastel single-page converter · Front-end preview only – connect your own backend for real downloads.
+        Soft pastel single-page converter · Front-end preview only – connect your own backend.
     </footer>
 
-<script>
-/* =========================
-   DARK MODE (with localStorage)
-========================= */
-const darkToggle = document.getElementById('darkToggle');
-const body = document.body;
-const card = document.querySelector('.card');
+    <script>
+        /* =========================
+           DARK MODE
+        ========================= */
+        const darkToggle = document.getElementById('darkToggle');
+        const body = document.body;
 
-function applyTheme(theme) {
-    if (theme === 'dark') {
-        body.style.background = 'linear-gradient(135deg,#0f172a,#232e3e)';
-        body.style.color = '#f1f5f9';
-         // We might need to handle specific variable overrides if we used inline styles previously
-         // But with the new CSS variables, we can just update the root properties or add a class.
-         // For backward compat with the inline JS logic, I will stick to what was there but improved.
-        card.style.background = '#1e293b';
-        card.style.color = '#f1f5f9';
-        darkToggle.textContent = 'Light Mode ☀️';
-        
-        // Update input backgrounds for dark mode manually since JS is handling it
-        document.querySelectorAll('input, select').forEach(el => {
-            el.style.background = '#334155';
-            el.style.color = '#fff';
-            el.style.borderColor = '#475569';
-        });
-        
-    } else {
-        body.style.background = 'linear-gradient(135deg, #f0fdf4, #fff7ed)';
-        body.style.color = '#1f2937';
-        card.style.background = '#ffffff';
-        card.style.color = '#1f2937';
-        darkToggle.textContent = 'Dark Mode 🌙';
-        
-        document.querySelectorAll('input, select').forEach(el => {
-            el.style.background = '#f9fafb';
-            el.style.color = '#1f2937';
-            el.style.borderColor = '#e5e7eb';
-        });
-    }
-}
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                body.classList.add('dark');
+                darkToggle.textContent = 'Light Mode ☀️';
+            } else {
+                body.classList.remove('dark');
+                darkToggle.textContent = 'Dark Mode 🌙';
+            }
 
-// Page load pe saved theme apply
-const savedTheme = localStorage.getItem('theme') || 'light';
-applyTheme(savedTheme);
-
-// Toggle click
-darkToggle.addEventListener('click', () => {
-    const newTheme =
-        localStorage.getItem('theme') === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('theme', newTheme);
-    applyTheme(newTheme);
-});
-
-
-/* =========================
-   RESET BUTTON
-========================= */
-document.getElementById('resetBtn').addEventListener('click', () => {
-    document.getElementById('url').value = '';
-    document.getElementById('format').value = 'mp3';
-    document.getElementById('qualitySelect').innerHTML =
-        '<option value="128k" selected>default (128k)</option>';
-    document.getElementById('status').textContent =
-        'Ready – paste a link to get started.';
-    document.getElementById('loader').classList.remove('active');
-});
-
-
-/* =========================
-   DYNAMIC QUALITY FETCH
-========================= */
-let timer = null;
-document
-    .querySelector("input[name='youtube_url']")
-    .addEventListener("input", function () {
-
-    clearTimeout(timer);
-    const url = this.value;
-    if (!url) return;
-
-    timer = setTimeout(() => {
-        fetch("/get_info", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "youtube_url=" + encodeURIComponent(url)
-        })
-        .then(res => res.json())
-        .then(data => {
-            const select = document.getElementById("qualitySelect");
-            select.innerHTML =
-                '<option value="128k" selected>default (128k)</option>';
-
-            if (!data.bitrates) return;
-
-            data.bitrates
-                .filter(b => b !== 128 && b !== 129)
-                .forEach(b => {
-                    select.innerHTML +=
-                        `<option value="${b}k">${b}k</option>`;
-                });
-        })
-        .catch(err =>
-            console.error("Error fetching quality info:", err)
-        );
-    }, 400);
-});
-
-
-/* =========================
-   FORM SUBMIT + DOWNLOAD
-========================= */
-document.querySelector("form").addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    const form = this;
-    const formData = new FormData(form);
-
-    document.querySelectorAll("input, select, button").forEach(el => {
-        el.disabled = true;
-        el.classList.add("blur-input");
-    });
-
-    document.getElementById("loader").classList.add("active");
-    document.getElementById("status").textContent =
-        "Processing your request...";
-
-    fetch(form.action, {
-        method: form.method,
-        body: formData
-    })
-    .then(async res => {
-        const blob = await res.blob();
-        let filename = "downloaded_file";
-
-        const disposition = res.headers.get("Content-Disposition");
-        if (disposition && disposition.includes("filename=")) {
-            filename = disposition.split("filename=")[1].replace(/"/g, "");
         }
 
-        const a = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
 
-        document.getElementById("loader").classList.remove("active");
-        document.getElementById("status").textContent =
-            "Download complete! Ready for next conversion.";
-
-        document.querySelectorAll("input, select, button").forEach(el => {
-            el.disabled = false;
-            el.classList.remove("blur-input");
+        darkToggle.addEventListener('click', () => {
+            const newTheme = body.classList.contains('dark') ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
         });
-    })
-    .catch(err => {
-        console.error("Download error:", err);
-        document.getElementById("loader").classList.remove("active");
-        document.getElementById("status").textContent =
-            "Error occurred. Please try again.";
 
-        document.querySelectorAll("input, select, button").forEach(el => {
-            el.disabled = false;
-            el.classList.remove("blur-input");
+        /* =========================
+           DYNAMIC QUALITY FETCH
+        ========================= */
+        let timer = null;
+        document.querySelector("input[name='youtube_url']").addEventListener("input", function () {
+            clearTimeout(timer);
+            const url = this.value;
+            if (!url) return;
+
+            timer = setTimeout(() => {
+                fetch("/get_info", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "youtube_url=" + encodeURIComponent(url)
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        const select = document.getElementById("qualitySelect");
+                        select.innerHTML = '<option value="128k" selected>default (128k)</option>';
+                        if (!data.bitrates) return;
+                        data.bitrates
+                            .filter(b => b !== 128 && b !== 129)
+                            .forEach(b => {
+                                select.innerHTML += `<option value="${b}k">${b}k</option>`;
+                            });
+                    })
+                    .catch(err => console.error("Error fetching quality:", err));
+            }, 400);
         });
-    });
-});
-</script>
 
-    
+        /* =========================
+           RESET BUTTON
+        ========================= */
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            document.getElementById('url').value = '';
+            document.getElementById('format').value = 'mp3';
+            document.getElementById('qualitySelect').innerHTML = '<option value="128k" selected>default (128k)</option>';
+            document.getElementById('status').textContent = 'Ready – paste a link to get started.';
+            document.getElementById('loader').classList.remove('active');
+            document.getElementById('statusDot').style.background = '#22c55e';
+        });
+
+        /* =========================
+           FORM SUBMIT + DOWNLOAD
+        ========================= */
+        document.querySelector("form").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const form = this;
+            const formData = new FormData(form);
+
+            // UI State: Loading
+            document.getElementById("loader").classList.add("active");
+            document.getElementById("status").textContent = "Processing your request...";
+            document.getElementById('statusDot').style.background = '#eab308'; // yellow
+
+            fetch(form.action, {
+                method: form.method,
+                body: formData
+            })
+                .then(async res => {
+                    if (!res.ok) throw new Error("Request failed");
+                    const blob = await res.blob();
+                    let filename = "downloaded_file";
+                    const disposition = res.headers.get("Content-Disposition");
+                    if (disposition && disposition.includes("filename=")) {
+                        filename = disposition.split("filename=")[1].replace(/"/g, "");
+                    }
+
+                    const a = document.createElement("a");
+                    const url = URL.createObjectURL(blob);
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    // UI State: Success
+                    document.getElementById("loader").classList.remove("active");
+                    document.getElementById("status").textContent = "Download complete!";
+                    document.getElementById('statusDot').style.background = '#22c55e'; // green
+                })
+                .catch(err => {
+                    console.error(err);
+                    // UI State: Error
+                    document.getElementById("loader").classList.remove("active");
+                    document.getElementById("status").textContent = "Error occurred. Please try again.";
+                    document.getElementById('statusDot').style.background = '#ef4444'; // red
+                });
+        });
+    </script>
 </body>
+
 </html>
