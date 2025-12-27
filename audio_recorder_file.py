@@ -3,7 +3,7 @@ import uuid
 from yt_dlp import YoutubeDL
 import time
 from apscheduler.schedulers.background import BackgroundScheduler   
-import os, re, glob
+import os, re, glob, sys
 import requests
 import psycopg2
 import smtplib
@@ -25,6 +25,12 @@ if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)
 
 COOKIES_FILE = os.path.join(os.path.dirname(__file__), "cookies.txt")
+
+# DEBUG: Check for cookies file immediately
+if os.path.exists(COOKIES_FILE):
+    print(f"[INFO] Cookies file found at: {COOKIES_FILE}")
+else:
+    print(f"[WARNING] Cookies file NOT found at: {COOKIES_FILE}. YouTube downloads will likely fail on server!")
 
 def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>|]', "", name)
@@ -84,20 +90,34 @@ def download():
         flash("Please enter a YouTube URL.")
         return redirect("/")
 
+    # Common options for both info extraction and download
+    common_opts = {
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+    }
+    
+    if os.path.exists(COOKIES_FILE):
+        common_opts['cookies'] = COOKIES_FILE
+        print(f"[INFO] Using cookies for extraction: {COOKIES_FILE}")
+    else:
+        print("[WARNING] No cookies found. Attempting without authentication (likely to fail on server).")
+
     try:
-        # Pass cookies here as well so metadata extraction works on server
-        ydl_opts_info = {"quiet": True}
-        if os.path.exists(COOKIES_FILE):
-             ydl_opts_info['cookies'] = COOKIES_FILE
-             
-        info = YoutubeDL(ydl_opts_info).extract_info(url, download=False)
+        # Pass cookies and headers here
+        opts_info = {"quiet": True}
+        opts_info.update(common_opts)
+        
+        info = YoutubeDL(opts_info).extract_info(url, download=False)
         video_title = info.get("title", "Unknown_Title")
         clean_title = re.sub(r'[^a-zA-Z0-9_\- ]', '', video_title).replace(" ", "_")
-        thumbnail_url = info.get("thumbnail")  # get thumbnail URL
+        thumbnail_url = info.get("thumbnail") 
 
     except Exception as e:
-        print(f"Error extracting info: {e}")
-        flash("Invalid YouTube URL or server blocked.")
+        print(f"[ERROR] Extract info failed: {e}")
+        # Log to stderr so it shows up in gunicorn logs
+        sys.stderr.write(f"Extract info failed: {str(e)}\n")
+        flash("Invalid YouTube URL or server blocked. Check server logs.")
         return redirect("/")
 
     filename = f"{clean_title}.{format_type.lower()}"
@@ -105,8 +125,8 @@ def download():
     
     ydl_opts = {
         'outtmpl': output_template,
-        'cookies': COOKIES_FILE if os.path.exists(COOKIES_FILE) else None,
     }
+    ydl_opts.update(common_opts)
 
     if format_type.lower() == "mp3":
         ydl_opts.update({
@@ -119,7 +139,7 @@ def download():
                     'preferredquality': quality,
                 },
                 {
-                    'key': 'EmbedThumbnail'  # embed thumbnail into mp3
+                    'key': 'EmbedThumbnail' 
                 },
                 {
                     'key': 'FFmpegMetadata'
@@ -135,15 +155,20 @@ def download():
         })
 
 
-    with YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+    except Exception as e:
+        print(f"[ERROR] Download failed: {e}")
+        sys.stderr.write(f"Download blocked/failed: {str(e)}\n")
+        flash("Server blocked by YouTube. Please update cookies.txt on server.")
+        return redirect("/")
 
     final_file = os.path.join(DOWNLOAD_FOLDER, filename)    
     files = glob.glob(os.path.join(DOWNLOAD_FOLDER, clean_title + ".*"))
     if files:
         final_file = os.path.join(DOWNLOAD_FOLDER, filename)
         # Check if file needs renaming (sometimes glob finds the temp files or different extensions)
-        # Ideally we trust yt-dlp output, but keep existing logic if it was working for user
         if not os.path.exists(final_file) and files:
              os.rename(files[0], final_file)
     else:
@@ -152,7 +177,7 @@ def download():
     if final_file and os.path.exists(final_file):
         return send_file(final_file, as_attachment=True, download_name=f"{clean_title}.{format_type.lower()}")
     else:
-        flash("Error downloading file.")
+        flash("Error processing file.")
         return redirect("/")
     
 
@@ -215,6 +240,12 @@ def get_info():
 
     try:
         ydl_opts_info = {"quiet": True}
+        
+        # User Agent Header
+        ydl_opts_info['http_headers'] = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
         if os.path.exists(COOKIES_FILE):
              ydl_opts_info['cookies'] = COOKIES_FILE
              
