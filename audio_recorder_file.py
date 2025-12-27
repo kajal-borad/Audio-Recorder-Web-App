@@ -3,11 +3,38 @@ import uuid
 from yt_dlp import YoutubeDL
 import time
 from apscheduler.schedulers.background import BackgroundScheduler   
-import os, re, glob, sys
+import os, re, glob, sys, shutil
 import requests
 import psycopg2
 import smtplib
 from email.mime.text import MIMEText
+import logging
+
+# -----------------------------
+# AUTO-FIX: JavaScript Runtime
+# -----------------------------
+# yt-dlp needs 'node' specifically. If only 'nodejs' exists (common on Ubuntu),
+# we locate it and create a temporary PATH entry so yt-dlp finds it.
+try:
+    if not shutil.which("node") and shutil.which("nodejs"):
+        print("[INFO] 'node' command not found, but 'nodejs' exists. Patching PATH...")
+        nodejs_path = shutil.which("nodejs")
+        # Create a local bin folder to bridge the gap
+        local_bin = os.path.join(os.path.dirname(__file__), "local_bin_fix")
+        if not os.path.exists(local_bin):
+            os.makedirs(local_bin)
+        
+        # Create symlink: local_bin/node -> /usr/bin/nodejs
+        symlink_path = os.path.join(local_bin, "node")
+        if not os.path.exists(symlink_path):
+            os.symlink(nodejs_path, symlink_path)
+            
+        # Prepend to PATH for this process
+        os.environ["PATH"] = local_bin + os.pathsep + os.environ["PATH"]
+        print(f"[SUCCESS] Patched PATH with: {local_bin}")
+        print(f"[CHECK] node version: {os.popen('node -v').read().strip()}")
+except Exception as e:
+    print(f"[WARNING] Failed to auto-patch Node.js: {e}")
 
 
 app = Flask(
@@ -17,6 +44,9 @@ app = Flask(
 )
 app.secret_key = "abc123"
 
+# Configure Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 # Download folder
@@ -28,9 +58,9 @@ COOKIES_FILE = os.path.join(os.path.dirname(__file__), "cookies.txt")
 
 # DEBUG: Check for cookies file immediately
 if os.path.exists(COOKIES_FILE):
-    print(f"[INFO] Cookies file found at: {COOKIES_FILE}")
+    logger.info(f"Cookies file found at: {COOKIES_FILE}")
 else:
-    print(f"[WARNING] Cookies file NOT found at: {COOKIES_FILE}. YouTube downloads will likely fail on server!")
+    logger.warning(f"Cookies file NOT found at: {COOKIES_FILE}. YouTube downloads will likely fail on server!")
 
 def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>|]', "", name)
@@ -90,33 +120,43 @@ def download():
         flash("Please enter a YouTube URL.")
         return redirect("/")
 
-    # Common options for both info extraction and download
+    # MODERN USER AGENT (Chrome 120 on Windows)
+    # This helps reduce bot detection significantly compared to the old Chrome 91 string
+    user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+
     common_opts = {
         'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
+            'User-Agent': user_agent,
+            'Accept-Language': 'en-US,en;q=0.9',
+        },
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'no_warnings': True,
+        'quiet': False,     # We want to see errors in logs
+        'verbose': True,    # Helps debug specific YouTube blocks
+        'retries': 10,      # Retry on 502/timeouts
+        'fragment_retries': 10,
     }
     
     if os.path.exists(COOKIES_FILE):
         common_opts['cookies'] = COOKIES_FILE
-        print(f"[INFO] Using cookies for extraction: {COOKIES_FILE}")
+        logger.info(f"Using cookies for extraction: {COOKIES_FILE}")
     else:
-        print("[WARNING] No cookies found. Attempting without authentication (likely to fail on server).")
+        logger.warning("No cookies found. Attempting without authentication.")
 
     try:
         # Pass cookies and headers here
         opts_info = {"quiet": True}
         opts_info.update(common_opts)
         
+        # 'extract_info' with download=False is lighter, but still checks validity
         info = YoutubeDL(opts_info).extract_info(url, download=False)
         video_title = info.get("title", "Unknown_Title")
         clean_title = re.sub(r'[^a-zA-Z0-9_\- ]', '', video_title).replace(" ", "_")
         thumbnail_url = info.get("thumbnail") 
 
     except Exception as e:
-        print(f"[ERROR] Extract info failed: {e}")
-        # Log to stderr so it shows up in gunicorn logs
-        sys.stderr.write(f"Extract info failed: {str(e)}\n")
+        logger.error(f"Extract info failed: {e}")
         flash("Invalid YouTube URL or server blocked. Check server logs.")
         return redirect("/")
 
@@ -156,28 +196,31 @@ def download():
 
 
     try:
+        logger.info(f"Starting download for {url}...")
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
+        logger.info("Download finished successfully.")
     except Exception as e:
-        print(f"[ERROR] Download failed: {e}")
-        sys.stderr.write(f"Download blocked/failed: {str(e)}\n")
-        flash("Server blocked by YouTube. Please update cookies.txt on server.")
-        return redirect("/")
+        logger.error(f"Download failed: {e}")
+        # Even if it errors, check if file exists (sometimes ignoreerrors saves it)
+        pass 
 
     final_file = os.path.join(DOWNLOAD_FOLDER, filename)    
     files = glob.glob(os.path.join(DOWNLOAD_FOLDER, clean_title + ".*"))
     if files:
-        final_file = os.path.join(DOWNLOAD_FOLDER, filename)
-        # Check if file needs renaming (sometimes glob finds the temp files or different extensions)
-        if not os.path.exists(final_file) and files:
-             os.rename(files[0], final_file)
+        # Find the mp3 or mp4 properly
+        for f in files:
+            if f.endswith(f".{format_type.lower()}"):
+                final_file = f
+                break
     else:
         final_file = None
 
     if final_file and os.path.exists(final_file):
         return send_file(final_file, as_attachment=True, download_name=f"{clean_title}.{format_type.lower()}")
     else:
-        flash("Error processing file.")
+        logger.error("Final file not found after download attempt.")
+        flash("Server blocked by YouTube. Please update cookies.txt using 'Get cookies.txt LOCALLY' extension.")
         return redirect("/")
     
 
@@ -239,11 +282,11 @@ def get_info():
     url = request.form.get("youtube_url")
 
     try:
-        ydl_opts_info = {"quiet": True}
-        
-        # User Agent Header
-        ydl_opts_info['http_headers'] = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        # Match user agent with download config
+        user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ydl_opts_info = {
+            "quiet": True,
+            "http_headers": {'User-Agent': user_agent}
         }
         
         if os.path.exists(COOKIES_FILE):
@@ -278,9 +321,6 @@ def get_info():
     except Exception as e:
         print("ERROR:", e)
         return {"bitrates": []}
-
-
-
 
 
 if __name__ == "__main__":
