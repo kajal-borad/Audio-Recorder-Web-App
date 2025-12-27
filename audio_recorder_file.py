@@ -274,14 +274,6 @@ def download():
     
 
 
-conn = psycopg2.connect(
-    host="localhost",
-    database="test_db",
-    user="kajalborad",   
-    password="kajalborad@1912"             
-)
-cursor = conn.cursor()
-
 # Admin Email
 ADMIN_EMAIL = "kajalborad45@gmail.com"
 
@@ -291,37 +283,58 @@ def contact_submit():
     email = request.form.get("email")
     description = request.form.get("description")
 
-    # INSERT into database
-    cursor.execute(
-        "INSERT INTO lead (name, email, description) VALUES (%s, %s, %s) RETURNING id",
-        (name, email, description)
-    )
-    lead_id = cursor.fetchone()[0]
-    conn.commit()
+    lead_id = None
 
-    # SEND EMAIL TO ADMIN ON NEW LEAD
     try:
-        msg_content = (
-            f"New contact submission:\n\n"
-            f"ID: {lead_id}\n"
-            f"Name: {name}\n"
-            f"Email: {email}\n"
-            f"Description: {description}"
+        # Create a fresh connection for every request to avoid "InFailedSqlTransaction"
+        conn = psycopg2.connect(
+            host="localhost",
+            database="test_db",
+            user="kajalborad",   
+            password="kajalborad@1912"             
         )
+        cursor = conn.cursor()
 
-        msg = MIMEText(msg_content)
-        msg['Subject'] = f"New Contact Lead #{lead_id}"
-        msg['From'] = "kajalborad45@gmail.com"      # YOUR EMAIL
-        msg['To'] = "kajalborad.devintelle@gmail.com"                     # ADMIN EMAIL
-        msg['Reply-To'] = email                     # USER EMAIL
-
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login("kajalborad45@gmail.com", "hekritbogafxrdte")
-            server.send_message(msg)
+        # INSERT into database
+        cursor.execute(
+            "INSERT INTO lead (name, email, description) VALUES (%s, %s, %s) RETURNING id",
+            (name, email, description)
+        )
+        lead_id = cursor.fetchone()[0]
+        conn.commit()
+        
+        # Clean up
+        cursor.close()
+        conn.close()
 
     except Exception as e:
-        logger.error(f"Email sending failed: {e}")
+        logger.error(f"Database Error: {e}")
+        return f"Database Error: {e}", 500
+
+    # SEND EMAIL TO ADMIN ON NEW LEAD
+    if lead_id:
+        try:
+            msg_content = (
+                f"New contact submission:\n\n"
+                f"ID: {lead_id}\n"
+                f"Name: {name}\n"
+                f"Email: {email}\n"
+                f"Description: {description}"
+            )
+
+            msg = MIMEText(msg_content)
+            msg['Subject'] = f"New Contact Lead #{lead_id}"
+            msg['From'] = "kajalborad45@gmail.com"      # YOUR EMAIL
+            msg['To'] = "kajalborad.devintelle@gmail.com"                     # ADMIN EMAIL
+            msg['Reply-To'] = email                     # USER EMAIL
+
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login("kajalborad45@gmail.com", "hekritbogafxrdte")
+                server.send_message(msg)
+
+        except Exception as e:
+            logger.error(f"Email sending failed: {e}")
 
     return render_template("thankyou_template.html")
 
