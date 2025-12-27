@@ -185,8 +185,8 @@ def download():
 conn = psycopg2.connect(
     host="localhost",
     database="test_db",
-    user="kajalborad",   
-    password="kajalborad@1912"             
+    user="",   
+    password=""             
 )
 cursor = conn.cursor()
 
@@ -278,6 +278,9 @@ def get_info():
     except Exception as e:
         print("ERROR:", e)
         return {"bitrates": []}
+
+
+
 
 
 if __name__ == "__main__":
