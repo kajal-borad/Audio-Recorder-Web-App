@@ -24,6 +24,8 @@ DOWNLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "downloads")
 if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)
 
+COOKIES_FILE = os.path.join(os.path.dirname(__file__), "cookies.txt")
+
 def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>|]', "", name)
 
@@ -83,21 +85,32 @@ def download():
         return redirect("/")
 
     try:
-        info = YoutubeDL({"quiet": True}).extract_info(url, download=False)
+        # Pass cookies here as well so metadata extraction works on server
+        ydl_opts_info = {"quiet": True}
+        if os.path.exists(COOKIES_FILE):
+             ydl_opts_info['cookies'] = COOKIES_FILE
+             
+        info = YoutubeDL(ydl_opts_info).extract_info(url, download=False)
         video_title = info.get("title", "Unknown_Title")
         clean_title = re.sub(r'[^a-zA-Z0-9_\- ]', '', video_title).replace(" ", "_")
         thumbnail_url = info.get("thumbnail")  # get thumbnail URL
 
-    except:
-        flash("Invalid YouTube URL.")
+    except Exception as e:
+        print(f"Error extracting info: {e}")
+        flash("Invalid YouTube URL or server blocked.")
         return redirect("/")
 
     filename = f"{clean_title}.{format_type.lower()}"
     output_template = os.path.join(DOWNLOAD_FOLDER, f"{clean_title}.%(ext)s")
+    
+    ydl_opts = {
+        'outtmpl': output_template,
+        'cookies': COOKIES_FILE if os.path.exists(COOKIES_FILE) else None,
+    }
+
     if format_type.lower() == "mp3":
-        ydl_opts = {
+        ydl_opts.update({
             'format': 'bestaudio/best',
-            'outtmpl': output_template,
             'writethumbnail': True,  
             'postprocessors': [
                 {
@@ -115,17 +128,11 @@ def download():
             'postprocessor_args': {
                 'FFmpegMetadata': ['-id3v2_version', '3']
             },
-            'cookies': '/root/Audio-Recorder-Web-App/cookies.txt',  # <-- Add this line
-
-        }
+        })
     else:
-        ydl_opts = {
+        ydl_opts.update({
             'format': 'bestvideo+bestaudio',
-            'outtmpl': output_template,
-            'cookies': '/root/Audio-Recorder-Web-App/cookies.txt',  # <-- Add this line
-
-
-        }
+        })
 
 
     with YoutubeDL(ydl_opts) as ydl:
@@ -135,19 +142,26 @@ def download():
     files = glob.glob(os.path.join(DOWNLOAD_FOLDER, clean_title + ".*"))
     if files:
         final_file = os.path.join(DOWNLOAD_FOLDER, filename)
-        os.rename(files[0], final_file)
+        # Check if file needs renaming (sometimes glob finds the temp files or different extensions)
+        # Ideally we trust yt-dlp output, but keep existing logic if it was working for user
+        if not os.path.exists(final_file) and files:
+             os.rename(files[0], final_file)
     else:
         final_file = None
 
-    return send_file(final_file, as_attachment=True, download_name=f"{clean_title}.{format_type.lower()}")
+    if final_file and os.path.exists(final_file):
+        return send_file(final_file, as_attachment=True, download_name=f"{clean_title}.{format_type.lower()}")
+    else:
+        flash("Error downloading file.")
+        return redirect("/")
     
 
 
 conn = psycopg2.connect(
     host="localhost",
     database="test_db",
-    user="darshangajera",   
-    password=""             
+    user="kajalborad",   
+    password="kajalborad@1912"             
 )
 cursor = conn.cursor()
 
@@ -200,7 +214,11 @@ def get_info():
     url = request.form.get("youtube_url")
 
     try:
-        info = YoutubeDL({"quiet": True}).extract_info(url, download=False)
+        ydl_opts_info = {"quiet": True}
+        if os.path.exists(COOKIES_FILE):
+             ydl_opts_info['cookies'] = COOKIES_FILE
+             
+        info = YoutubeDL(ydl_opts_info).extract_info(url, download=False)
 
         audio_formats = [
             f for f in info.get("formats", [])
