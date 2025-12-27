@@ -185,8 +185,8 @@ def download():
 conn = psycopg2.connect(
     host="localhost",
     database="test_db",
-    user="",   
-    password=""             
+    user="kajalborad",   
+    password="kajalborad@1912"             
 )
 cursor = conn.cursor()
 
