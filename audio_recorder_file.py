@@ -331,11 +331,11 @@ def get_info():
     url = request.form.get("youtube_url")
 
     try:
-        # Match user agent with download config
-        user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        # Attempt to use mobile clients to bypass 'Bot' detection for metadata
         ydl_opts_info = {
             "quiet": True,
-            "http_headers": {'User-Agent': user_agent}
+            "http_headers": {'User-Agent': user_agent},
+            "extractor_args": {'youtube': {'player_client': ['android', 'ios']}}
         }
         
         if os.path.exists(COOKIES_FILE):
@@ -373,6 +373,8 @@ def get_info():
 
     except Exception as e:
         logger.error(f"get_info ERROR: {e}")
+        # User requested dynamic ONLY. If it fails, we return empty list.
+        # This means if the server is blocked, the dropdown will NOT populate.
         return {"bitrates": []}
 
 
