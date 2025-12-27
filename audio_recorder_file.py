@@ -115,12 +115,15 @@ def download():
             'postprocessor_args': {
                 'FFmpegMetadata': ['-id3v2_version', '3']
             },
+            'cookies': '/root/Audio-Recorder-Web-App/cookies.txt',  # <-- Add this line
 
         }
     else:
         ydl_opts = {
             'format': 'bestvideo+bestaudio',
             'outtmpl': output_template,
+            'cookies': '/root/Audio-Recorder-Web-App/cookies.txt',  # <-- Add this line
+
 
         }
 
