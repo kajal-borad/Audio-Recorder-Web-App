@@ -1,6 +1,15 @@
+from flask import Flask, render_template, request, send_file, flash, redirect, after_this_request
+import uuid
+from yt_dlp import YoutubeDL
+import time
+from apscheduler.schedulers.background import BackgroundScheduler   
+import os, re, glob, sys, shutil, subprocess
+import requests
+import psycopg2
+import smtplib
+from email.mime.text import MIMEText
+import logging
 import threading
-
-# ... (rest of imports)
 
 # Helper function for async email
 def send_async_email(name, email, description, lead_id):
@@ -24,50 +33,11 @@ def send_async_email(name, email, description, lead_id):
             server.starttls()
             server.login("kajalborad45@gmail.com", "hekritbogafxrdte")
             server.send_message(msg)
-            logger.info(f"Email sent for lead #{lead_id}")
+            # Use local print or rely on global logger (which is defined later)
+            print(f"[INFO] Email sent for lead #{lead_id}")
 
     except Exception as e:
-        logger.error(f"Email sending failed: {e}")
-
-@app.route("/contact_submit", methods=["POST"])
-def contact_submit():
-    name = request.form.get("name")
-    email = request.form.get("email")
-    description = request.form.get("description")
-
-    lead_id = None
-
-    try:
-        # Create a fresh connection for every request
-        conn = psycopg2.connect(
-            host="localhost",
-            database="test_db",
-            user="kajalborad",   
-            password="kajalborad@1912"             
-        )
-        cursor = conn.cursor()
-
-        # INSERT into database
-        cursor.execute(
-            "INSERT INTO lead (name, email, description) VALUES (%s, %s, %s) RETURNING id",
-            (name, email, description)
-        )
-        lead_id = cursor.fetchone()[0]
-        conn.commit()
-        
-        # Clean up
-        cursor.close()
-        conn.close()
-
-    except Exception as e:
-        logger.error(f"Database Error: {e}")
-        return f"Database Error: {e}", 500
-
-    # SEND EMAIL IN BACKGROUND THREAD
-    if lead_id:
-        threading.Thread(target=send_async_email, args=(name, email, description, lead_id)).start()
-
-    return render_template("thankyou_template.html")
+        print(f"[ERROR] Email sending failed: {e}")
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
